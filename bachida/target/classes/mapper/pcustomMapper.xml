@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="pcustomMapper">
+	
+	<!-- 1:1커스텀 -->
+	
+	<!-- 글쓰기 -->
+	<!-- selectKey가 먹질 않음 -->
+	<insert id="insertPcustom" parameterType="pcustom">
+		<!-- <selectKey keyProperty="pcustomIdx" resultType="int" order="BEFORE">
+			select pcustom_seq.nextval from dual
+		</selectKey> -->
+		<![CDATA[
+			insert into pcustom values(pcustom_seq.nextval, #{title}, #{content}, sysdate, '요청', #{originalFileName}, #{savedFileName}, #{id}, #{artisanId})
+		]]>
+	</insert>
+	
+	<!-- 글수정(파일 수정 안 할 경우) -->
+	<update id="updatePcustom" parameterType="pcustom">
+		<![CDATA[
+			update pcustom set title=#{title}, content=#{content} where pcustom_idx=#{pcustomIdx}
+		]]>
+	</update>
+	<!-- 글수정(파일 수정 할 경우) -->
+ 	<update id="updateWithFilePcustom" parameterType="pcustom">
+		<![CDATA[
+			update pcustom set title=#{title}, content=#{content}, original_file_name=#{originalFileName}, saved_file_name=#{savedFileName} where pcustom_idx=#{pcustomIdx}
+		]]>
+	</update>
+	
+	<!-- 글삭제 -->
+	<delete id="deletePcustom" parameterType="int">
+		<![CDATA[
+			delete from pcustom where pcustom_idx=#{pcustomIdx}
+		]]>
+	</delete>
+	
+	<!-- 글목록-->
+<!--  	<select id="listPcustom" resultType="pcustom">
+		<![CDATA[
+			select pcustom_idx pcustomIdx, title, content, to_char(write_date, 'yyyy-MM-dd') writeDate, state, original_file_name originalFileName, saved_file_name savedFileName, id, artisan_id artisanId from pcustom order by pcustom_idx desc
+		]]>
+	</select> -->
+	
+	<!-- 전체 게시글 갯수. 조건절 작가아이디일 때 -->
+ 	<select id="getPcustomCnt" parameterType="string" resultType="int">
+		select count(*) from pcustom where artisan_id=#{artisanId}
+	</select>
+	<!-- 글목록(페이징 처리) -->
+	<select id="listPcustom" parameterType="hashmap" resultType="pcustom">
+		<![CDATA[
+			select pp.pcustom_idx pcustomIdx, pp.title title, to_char(write_date, 'yyyy-MM-dd') writeDate, pp.state state,  pp.id id, pp.artisan_id artisanId 
+				from (select rownum rnum, p.* 
+					from (select pcustom_idx, title, write_date, state, id, artisan_id from pcustom where artisan_id=#{artisanId} order by pcustom_idx desc) p
+						where rownum<=#{endArticleNum}) pp where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	<!-- 검색글 갯수. 조건절 작가아이디일 때 -->
+ 	<select id="getSearchPcustomCount" parameterType="hashmap" resultType="int">
+		select count(*) from pcustom where (title like '%'||#{keyword}||'%' or content like '%'||#{keyword}||'%') and artisan_id=#{artisanId}
+	</select>
+	<!-- 글목록(검색, 페이징 처리) -->
+	<select id="searchListPcustom" parameterType="hashmap" resultType="pcustom">
+		<![CDATA[
+		select pp.pcustom_idx pcustomIdx, pp.title title, pp.content content, to_char(write_date, 'yyyy-MM-dd') writeDate, pp.state state,  pp.id id, pp.artisan_id artisanId 
+				from (select rownum rnum, p.* 
+						from (select pcustom_idx, title, content, write_date, state, id, artisan_id from pcustom where (title like '%'||#{keyword}||'%' or content like '%'||#{keyword}||'%') and artisan_id=#{artisanId} order by pcustom_idx desc) p
+							where rownum<=#{endArticleNum}) pp where rnum>=#{startArticleNum}
+		]]>
+	</select>
+
+	<!-- 글보기 -->
+	<select id="readPcustom" parameterType="int" resultType="pcustom">
+		<![CDATA[
+			select pcustom_idx pcustomIdx, title, content, to_char(write_date, 'yyyy-MM-dd') writeDate, state, original_file_name originalFileName, saved_file_name savedFileName, id, artisan_id artisanId from pcustom where pcustom_idx=#{pcustomIdx}
+		]]>
+	</select>
+	
+	<!-- 글 원본파일 이름 얻어오기 -->
+	<select id="getPcustomOriginalFileName" parameterType="int" resultType="string">
+		<![CDATA[
+			select original_file_name originalFileName from pcustom where pcustom_idx=#{pcustomIdx}
+		]]>
+	</select>
+	
+	<!-- 더더.. -->
+	
+	<!-- 댓글쓰기 -->
+	<insert id="insertPcustomOpinion" parameterType="pcustomOpinion">
+		<!-- <selectKey keyProperty="pcustomOpinionIdx" resultType="int" order="BEFORE">
+			select pcustom_opinion_seq.nextval from dual
+		</selectKey> -->
+		<![CDATA[
+			insert into pcustom_opinion values(pcustom_opinion_seq.nextval, #{content}, #{originalFileName}, #{savedFileName}, #{pcustomIdx}, #{id}, sysdate)
+		]]>
+	</insert>
+	
+	<!-- 댓글목록 -->
+	<select id="listPcustomOpinion" parameterType="int" resultType="pcustomOpinion">
+		<![CDATA[
+			select pcustom_opinion_idx pcustomOpinionIdx, content, original_file_name originalFileName, saved_file_name savedFileName, pcustom_idx pcustomIdx, id, to_char(write_date, 'yyyy-MM-dd[hh24:mm]') writeDate from pcustom_opinion where pcustom_idx=#{pcustomIdx} order by pcustom_opinion_idx
+		]]>
+	</select>
+	
+	<!-- 댓글보기 -->
+	<select id="readPcustomOpinion" parameterType="int" resultType="pcustomOpinion">
+		<![CDATA[
+			select pcustom_opinion_idx pcustomOpinionIdx, content, original_file_name originalFileName, saved_file_name savedFileName, pcustom_idx pcustomIdx, id, to_char(write_date, 'yyyy-MM-dd[hh24:mm]') writeDate from pcustom_opinion where pcustom_opinion_idx=#{pcustomOpinionIdx} 
+		]]>
+	</select>
+	
+	<!-- 댓글 삭제(글이 삭제될 때) -->
+	<delete id="deletePcustomOpinion" parameterType="int">
+		<![CDATA[
+			delete from pcustom_opinion where pcustom_idx=#{pcustomIdx}
+		]]>
+	</delete>
+	
+	<!-- 댓글 원본파일 이름 얻어오기 -->
+	<select id="getPcustomOpinionOriginalFileName" parameterType="int" resultType="string">
+		<![CDATA[
+			select original_file_name originalFileName from pcustom_opinion where pcustom_opinion_idx=#{pcustomOpinionIdx}
+		]]>
+	</select>
+	
+	<!-- 1:1커스텀 수락 -->
+	<update id="okPcustom" parameterType="int">
+		<![CDATA[
+			update pcustom set state='수락' where pcustom_idx=#{pcustomIdx}
+		]]>
+	</update>
+	
+	<!-- 1:1커스텀 거부 -->
+	<update id="byePcustom" parameterType="int">
+		<![CDATA[
+			update pcustom set state='거부' where pcustom_idx=#{pcustomIdx}
+		]]>
+	</update>
+	
+	<!-- 1:1커스텀 요청 여부 확인(요청상태인가) -->
+	<select id="isRequestPcustom" parameterType="int" resultType="int">
+		<![CDATA[
+			select 1 from pcustom where state='요청' and pcustom_idx=#{pcustomIdx}
+		]]>
+	</select>
+	
+	<!-- 1:1커스텀 거부 여부 확인(거부상태인가) -->
+	<select id="isByePcustom" parameterType="int" resultType="int">
+		<![CDATA[
+			select 1 from pcustom where state='거부' and pcustom_idx=#{pcustomIdx}
+		]]>
+	</select>
+
+	<!-- 견적서 쓰기. 작가가.. -->
+	<insert id="insertPcustomEstimate" parameterType="productionOrder">
+		<![CDATA[
+			insert into production_order(production_order_idx, price, state, order_division, quantity, content, id, pcustom_idx, artisan_id) 
+				values(production_order_seq.nextval, #{price}, '주문', '1:1 제작요청', 1, #{content}, #{id}, #{pcustomIdx}, #{artisanId})
+		]]>
+	</insert>
+	
+	<!-- 견적서 확인. 글쓴이가 읽기.. -->
+ 	<select id="readPcustomEstimate" parameterType="int" resultType="productionOrder">
+		<![CDATA[
+			select production_order_idx productionOrderIdx, price, address, state, order_division orderDivision, quantity, content, id, pcustom_idx pcustomIdx, artisan_id artisanId from production_order where pcustom_idx=#{pcustomIdx}
+		]]>
+	</select>
+	
+	<!-- 견적서 유무 확인 -->
+	<select id="isPcustomEstimate" parameterType="int" resultType="int">
+		<![CDATA[
+			select 1 from production_order where pcustom_idx=#{pcustomIdx}
+		]]>
+	</select>
+	
+	<!-- 견적서 수정 -->
+	<update id="updatePcustomEstimate" parameterType="productionOrder">
+		<![CDATA[
+			update production_order set content=#{content}, price=#{price} where production_order_idx=#{productionOrderIdx}
+		]]>
+	</update>
+	
+	<!-- 계약금 결제 -->
+	<update id="downPaymentPcustom" parameterType="productionOrder">
+		<![CDATA[
+			update production_order set address=#{address}, order_date=sysdate, state='제작' where production_order_idx=#{productionOrderIdx}
+		]]>
+	</update>
+	
+	<!-- 잔금 결제 -->
+	<update id="finallyPaymentPcustom" parameterType="productionOrder">
+		<![CDATA[
+			update production_order set state='결제완료' where production_order_idx=#{productionOrderIdx}
+		]]>
+	</update>
+	
+	<!-- 계약금 결제 유무 확인 -->
+	<select id="isDownPaymentPcustom" parameterType="int" resultType="int">
+		<![CDATA[
+			select 1 from production_order where state='제작' and pcustom_idx=#{pcustomIdx}
+		]]>
+	</select>
+	
+	<!-- 잔금 결제 유무 확인 -->
+	<select id="isFinallyPaymentPcustom" parameterType="int" resultType="int">
+		<![CDATA[
+			select 1 from production_order where state='결제완료' and pcustom_idx=#{pcustomIdx}
+		]]>
+	</select>
+	
+	<!-- 구매자 캐쉬 정보 가져오기 -->
+	<select id="getCashByMember" parameterType="string" resultType="int">
+		<![CDATA[
+			select cash from member where id=#{id}
+		]]>
+	</select>
+	
+	<!-- 구매자 캐쉬 차감 -->
+	<update id="updateCash" parameterType="hashmap">
+		<![CDATA[
+			update member set cash=cash-#{payment} where id=#{id}
+		]]>
+	</update>
+	
+	<!-- 구매자 캐쉬 내역 삽입 -->
+	<insert id="insertCash" parameterType="hashmap">
+		<![CDATA[
+			insert into cash (cash_idx, content, update_cash, update_date, id) values(cash_seq.nextval, '결제', #{payment}, sysdate, #{id})
+		]]>
+	</insert>
+	
+	<!-- 작가 캐쉬 입금 -->
+	<update id="updateArtisanCash" parameterType="hashmap">
+		<![CDATA[
+			update member set cash=cash+#{payment} where id=#{artisanId}
+		]]>
+	</update>
+	
+	<!-- 작가 캐쉬 내역 삽입 -->
+	<insert id="insertArtisanCash" parameterType="hashmap">
+		<![CDATA[
+			insert into cash (cash_idx, content, update_cash, update_date, id) values(cash_seq.nextval, '입금', #{payment}, sysdate, #{artisanId})					
+		]]>
+	</insert>
+	
+	<!-- 배송완료 -->
+	<update id="deliveryCompletedPcustom" parameterType="productionOrder">
+		<![CDATA[
+			update production_order set parcel_name=#{parcelName}, parcel_idx=#{parcelIdx}, state='배송완료' where production_order_idx=#{productionOrderIdx}
+		]]>
+	</update>
+	
+	<!-- 배송완료 유무 확인 -->
+	<select id="isDeliveryCompletedPcustom" parameterType="int" resultType="int">
+		<![CDATA[
+			select 1 from production_order where state='배송완료' and pcustom_idx=#{pcustomIdx}
+		]]>
+	</select>
+	
+	
+	<!-- 메인홈 검색바(작품 검색) -->
+	<!-- 검색글 갯수 -->
+	<select id="getSearchProductCnt" parameterType="string" resultType="int">
+		SELECT count(*) FROM product p JOIN artisan a ON p.artisan_id = a.artisan_id 
+			WHERE p.product_name like '%'||#{keyword}||'%' or a.artisan_name like '%'||#{keyword}||'%'
+	</select>
+	<!-- 검색 목록 -->
+	<select id="searchListProduct" parameterType="hashmap" resultType="product">
+		<![CDATA[
+			SELECT * FROM 
+				(SELECT rownum rnum ,b.* FROM
+					(SELECT meta_Category_Idx metaCategoryIdx, main_Category_Idx mainCategoryIdx, p.PRODUCT_IDX productIdx, p.ARTISAN_Id artisanId,p.ARTISAN_NAME artisanName,p.PRODUCT_NAME productName,p.PRODUCT_PRICE productPrice,p.recommend recommend,to_char(p.write_date,'yyMMdd') writeDate
+			 				 FROM product p JOIN artisan a ON p.artisan_id = a.artisan_id 
+			 				 	WHERE (p.product_name like '%'||#{keyword}||'%' or a.artisan_name like '%'||#{keyword}||'%')
+			 				 		order by writeDate desc) b where rownum<=#{endArticleNum}) 
+			 				 			WHERE rnum >=#{startArticleNum}
+	]]>
+	</select>
+	
+</mapper>

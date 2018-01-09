@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="mainMapper">
+	<!-- 최근 상품리스트 3개 --> 
+	<select id="getRecentProductList" resultType="product">
+		<![CDATA[
+		select ROWNUM, p.* from 
+		(select product_idx productIdx, product_name productName , artisan_id artisanId,artisan_name artisanName, product_state productState from product where product_state = '판매중' order by product_idx desc) p 
+		where rownum<=3
+		]]>
+	</select>
+	<select id="getProductAttach" parameterType="int" resultType="attach">
+		<![CDATA[
+			select rownum,saved_file_name savedFileName, original_file_name originalFileName from PRODUCT_ATTACH where product_idx=#{productIdx} and rownum<=1
+		]]>
+	</select>
+	
+	<!-- 인기상품 8개 -->
+	<select id="getPopularProductList" resultType="product">
+		<![CDATA[
+		select p.meta_Category_Idx metaCategoryIdx, p.main_Category_Idx mainCategoryIdx , p.PRODUCT_IDX productIdx, p.ARTISAN_Id artisanId,p.artisan_name artisanName,p.PRODUCT_NAME productName,p.PRODUCT_PRICE productPrice,p.recommend recommend, p.view_cnt from 
+(select * from product order by recommend desc , VIEW_CNT desc ) p where rownum between 1 and 8
+		]]>
+	</select>
+	
+	
+	<!-- 추천상품 4개씩 -->
+	<select id="getRecommendProductlist" resultType="product">
+		<![CDATA[
+		select p.meta_Category_Idx metaCategoryIdx, p.main_Category_Idx mainCategoryIdx , p.PRODUCT_IDX productIdx, p.ARTISAN_Id artisanId,p.artisan_name artisanName,p.PRODUCT_NAME productName,p.PRODUCT_PRICE productPrice,p.recommend recommend, p.view_cnt from 
+(select * from product where MAIN_CATEGORY_IDX=#{mainCategoryIdx} order by RECOMMEND desc) p where rownum between 1 and 4
+		]]>
+	</select>
+	
+	<!-- 안읽은 메세지 개수 -->
+	<select id="getMessageCnt" parameterType="string" resultType="int">
+		select count(*) from message where CONFIRM=0 and receiver=#{id}
+	</select>
+	
+	
+</mapper>
+
+
+
+

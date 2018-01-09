@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="artisanTimelineMapper"> 
+<!-- 1.리스트 글 카운트  -->
+	<select id="getArtisanTimelineCnt" resultType="int">
+		select count(*) from artisan_timeline where artisan_id=#{artisanId}
+	</select>
+	<!-- 2.리스트 & 페이징 쿼리-->
+	<select id="listArtisanTimeline" parameterType="hashmap" resultType="artisanTimeline">
+		<![CDATA[
+			 select * from 
+				(select rownum rnum ,b.* from 
+					(select artisan_timeline_idx artisanTimelineIdx, content content, recommend recommend, to_char(write_date,'yyyy-MM-dd')writeDate,original_file_name orginalFileName, saved_file_name savedFileName, artisan_id artisanId 
+from artisan_timeline where artisan_id=#{artisanId} order by write_date desc) b 
+			where rownum<=#{endArticleNum}) where rnum >=#{startArticleNum}
+		]]>
+	</select>
+	
+	<!-- 3.작가정보보기 -->
+	<select id="artisanInfo" resultType="artisan" parameterType="string">
+		select artisan_id artisanId, artisan_name artisanName, artisan_intro artisanIntro, ARTISAN_POLICY artisanPolicy,
+original_file_name originalFileName,saved_file_name savedFileName, ARTISAN_TEL artisanTel, ARTISAN_EMAIL artisanEmail from artisan where artisan_id=#{artisanId}
+	</select>
+	
+	<!-- 4. 타임라인 작성 -->
+	<insert id="insertArtisanTimeline" parameterType="artisanTimeline">
+		<selectKey resultType="int" order="BEFORE" keyProperty="artisanTimelineIdx"> 
+			select artisan_timeline_seq.nextval from dual
+		</selectKey>
+		insert into artisan_timeline values(#{artisanTimelineIdx},#{content},#{recommend} , sysdate , #{originalFileName}, #{savedFileName},#{artisanId}) 
+	</insert>
+	
+	 <!-- 5. 수정 -->
+	<!--<update id="updateArtisanTimeline" parameterType="artisanTimeline">
+		update arisan_timeline set content=#{content}, original_file_name=#{originalFileName} where artisan_timeline_idx=#{artisanTimelineIdx}
+	</update> -->
+	<!--6.타임라인 삭제-->
+	<delete id="deleteArtisanTimeline" parameterType="int">
+		delete from artisan_timeline where artisan_timeline_idx =#{artisanTimelineIdx}
+	</delete>
+	<!-- 7.추천수 -->
+	<update id="RecommendArtisanTimeline" parameterType="int">
+	update artisan_timeline set recommend=recommend+1 where artisan_timeline_idx=#{artisanTimelineIdx}
+	</update>
+	<!-- 8. 북마크 카운트 증가-->
+	<!-- <update id="increaseForArtisanBookmarkCnt" parameterType="int">
+		update artisan_bookmark set recommend=recommend+1 where artisan_bookmark_idx=#{artisanBookmarkIdx}
+	</update> -->
+	<!-- 9.북마크 추가 -->
+	<insert id="insertArtisanBookmark" parameterType="bookmark">
+	<selectKey keyProperty="artisanBookmarkIdx" resultType="int" order="AFTER">
+			select max(artisan_bookmark_idx) from artisan_bookmark
+		</selectKey>
+		insert into artisan_bookmark values(artisan_bookmark_seq.nextval,#{id},#{artisanId})
+	</insert>
+	<!-- 타임라인 원본파일 불러오기 -->
+	<select id="getTimelineOriginalFileName" parameterType="int" resultType="string">
+		<![CDATA[
+			select original_file_name originalFileName from artisan_timeline where artisan_timeline_idx=#{artisanTimelineIdx}
+		]]>
+	</select>
+	<!-- 작가프로필 원본파일 불러오기 -->
+	<select id="getArtisanInfoOriginalFileName" parameterType="string" resultType="hashmap">
+		<![CDATA[
+			select original_file_name originalFileName ,saved_file_name savedFileName from artisan where artisan_id=#{artisanId}
+		]]>
+	</select>
+	
+	<!-- 북마크 여부 확인 -->
+	<select id="isFollow" resultType="bookmark" parameterType="hashmap">
+		select artisan_bookmark_idx artisanBookmarkIdx, id, artisan_id artisanId from artisan_bookmark where id=#{id} and artisan_id =#{artisanId}
+	</select>
+	
+	
+	
+</mapper>
+
+
+
+

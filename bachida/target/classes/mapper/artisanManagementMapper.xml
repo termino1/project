@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="artisanManagementMapper">
+	<!-- 1.리스트 글 카운트 -->
+	<select id="SalesListCnt" resultType="int" parameterType="String">
+		select count(*) from order_product op, order_option oo, orders o ,
+		product p
+		where op.product_idx=o.ORDERs_IDX and
+		op.order_product_idx=oo.ORDER_product_IDX and
+		op.product_idx=p.product_idx and p.artisan_id=#{artisnaId}
+	</select>
+	<!-- 2.리스트 & 페이징 쿼리 -->
+	<select id="listSalesManagement" parameterType="hashmap" resultType="hashmap">
+		<![CDATA[
+		select * from 
+        (select rownum rnum ,b.* from 
+        (select p.artisan_id artisanId,p.product_name productName, op.order_product_idx orderProductIdx, op.quantity quantity, op.order_name orderName, op.price price,op.state satet,  o.total_price totalPrice, to_char(o.order_date,'yyyy-MM-dd') orderDate 
+		from order_product op, orders o , product p
+		where op.product_idx=o.ORDERs_IDX 
+		and op.product_idx=p.product_idx and p.artisan_id=#{artisanId} order by op.order_product_idx desc) b 
+         where rownum<=#{endArticleNum}) where rnum >=#{startArticleNum}
+		]]>
+	</select>
+	<!-- 3.매출액 -->
+	<select id="totalProductSales" resultType="int" parameterType="String">
+	select sum(price)
+   from order_product op, order_option oo, orders o , product p
+   where op.product_idx=o.ORDERs_IDX and op.order_product_idx=oo.ORDER_product_IDX and op.product_idx=p.product_idx and p.artisan_id=#{artisanId}
+	</select>
+	<!-- 4. 수수료  -->
+	<select id="deductProductSales" resultType="int" parameterType="String">
+	select sum(price)*0.03
+   from order_product op, order_option oo, orders o , product p
+   where op.product_idx=o.ORDERs_IDX and op.order_product_idx=oo.ORDER_product_IDX and op.product_idx=p.product_idx and p.artisan_id=#{artisanId}
+	</select>
+	<!-- 5. 총 합계 (총 매출)-->
+	<select id="grossProductSalse" resultType="int" parameterType="String">
+	select sum(price)-(sum(price)*0.03)
+   from order_product op, order_option oo, orders o , product p
+   where op.product_idx=o.ORDERs_IDX and op.order_product_idx=oo.ORDER_product_IDX and op.product_idx=p.product_idx and p.artisan_id=#{artisanId}
+	</select>
+</mapper>
+
+
+
+

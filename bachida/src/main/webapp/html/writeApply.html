@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+<link rel="stylesheet" href="../css/bootstrap.css">
+<script type="text/javascript" src="../js/bootstrap.js"></script>
+<title>Insert title here</title>
+</head>
+<body>
+	<h3>작가신청</h3>
+	<div class="col-md-8">
+	<form>
+	<table class="table">
+		<tr><td class="active text-center">연락처</td><td><input type="text" name="artisanTel" id="artisanTel"></td></tr>
+		<tr><td class="active text-center">이메일</td><td><input type="text" name="artisanEmail" id="artisanEmail"></td></tr>
+		<tr><td class="active text-center">작가소개</td><td><textarea class="form-control" name="artisanIntro" id="artisanIntro" rows="3"></textarea></td></tr>
+		<tr><td class="active text-center">작품소개</td><td><textarea class="form-control" name="craftIntro" id="craftIntro" rows="3"></textarea></td></tr>
+		<tr><td class="active text-center">첨부파일</td><td><input type="file" name="files" id="files" multiple="multiple"></td></tr>
+		<tr>
+			<td colspan="2">
+				<button type="button" class="btn btn-default pull-right" id="applyBtn">신청</button>
+			</td>
+		</tr>
+	</table>
+	</form>
+	</div>
+</body>
+</html>

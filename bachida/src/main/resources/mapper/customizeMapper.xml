@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="customizeMapper"> 
+
+	<select id="getBidCount" parameterType="string" resultType="int">
+		select count(*) from bid where artisan_id=#{id}
+	</select>
+	<select id="getBidList" parameterType="hashmap" resultType="bid" >
+			 <![CDATA[
+			 select * from (select rownum rnum, b.* from (select bid_idx bidIdx, content, price, state, custom_idx customIdx, 
+			 artisan_id artisanId, write_date writeDate from bid where artisan_id=#{id} order by bid_idx desc) b 
+			 where rownum<=#{endArticleNum}) where rnum>=#{startArticleNum}
+			 ]]>
+	</select>
+	<select id="getAllBidListById" parameterType="string" resultType="bid">
+		select bid_idx bidIdx, content, price, state, custom_idx customIdx, 
+			 artisan_id artisanId, write_date writeDate from bid where artisan_id=#{id} order by bid_idx desc
+	</select>
+	
+	<select id="getProductionOrder" parameterType="int" resultType="productionOrder">
+		select production_order_idx productionOrderIdx, price, address, parcel_name parcelName, 
+		parcel_idx parcelIdx, to_char(order_date,'yyyy-MM-dd') orderDate, state, order_division orderDivision, 
+		quantity, content,id, bid_idx bidIdx, pcustom_idx pcustomIdx
+		from PRODUCTION_ORDER where bid_idx=#{bidIdx}
+	</select>
+	<select id="getCustomOpinionList" parameterType="int" resultType="customOpinion">
+		select custom_opinion_idx customOpinionIdx, content, original_file_name originalFileName,
+		 saved_file_name savedFileName, bid_idx bidIdx, id , to_char(write_date,'yyyy-MM-dd')writeDate from custom_opinion where bid_idx=#{bidIdx} order by custom_opinion_idx 
+	</select>
+	<select id="getBid" parameterType="int" resultType="bid">
+		select bid_idx bidIdx, content, price, state, custom_idx customIdx, artisan_id artisanId, 
+		to_char(write_date,'yyyy-MM-dd')writeDate from bid where bid_idx=#{bidIdx}
+	</select>
+	
+	<select id="getArtisan" parameterType="string" resultType="artisan">
+		select artisan_id artisanId, artisan_name artisanName, original_file_name originalFileName, saved_file_name savedFileName
+		 from artisan where artisan_id=#{artisanId}
+	</select>
+	
+	<select id="getBidAttach" parameterType="int" resultType="bidAttach">
+		select bid_idx bidIdx,original_file_name originalFileName,
+		 saved_file_name savedFileName  from bid_attach where bid_idx=#{bidIdx}
+	</select>
+	<insert id="insertCustomOpinion" parameterType="customOpinion" >
+		<selectKey keyProperty="customOpinionIdx" resultType="int" order="BEFORE">
+				select custom_opinion_seq.nextval from dual
+		</selectKey>
+		insert into custom_opinion values (#{customOpinionIdx},#{content},#{originalFileName},#{savedFileName},#{bidIdx},#{id},sysdate)
+	</insert>
+	<insert id="insertProductionOrder" parameterType="productionOrder" >
+		<selectKey keyProperty="productionOrderIdx" resultType="int" order="BEFORE">
+			select production_order_seq.nextval from dual
+		</selectKey>
+		insert into production_order (production_order_idx, price, order_date, state, order_division, quantity, content, id, artisan_id, bid_idx , address) 
+		values(#{productionOrderIdx},#{price},sysdate,'주문','제작요청',#{quantity},#{content},#{id},#{artisanId},#{bidIdx},#{address,jdbcType=VARCHAR})
+	</insert>
+	<update id="updateAddress" parameterType="hashmap">
+		update PRODUCTION_ORDER set address=#{address} where production_order_idx=#{productionOrderIdx}
+	</update>
+	
+	<select id="getUsersCash" parameterType="string" resultType="string">
+		select cash from member where id=#{id}
+	</select>
+	<update id="updateDepositCash" parameterType="hashmap">
+		update member set cash=cash-#{cash} where id=#{id}
+	</update>
+	<insert id="insertDepositCash" parameterType="hashmap">
+		<selectKey keyProperty="cashIdx" resultType="int" order="BEFORE">
+		 	select cash_seq.nextval from dual
+		</selectKey>
+		insert into cash (cash_idx,content,update_cash,update_date,id) values(#{cashIdx},'제작 계약금 결제',#{cash},sysdate,#{id})
+	</insert>
+	<update id="updateProductState" parameterType="int">
+		update PRODUCTION_ORDER set state='제작' where production_order_idx=#{productionOrderIdx}
+	</update>
+	<update id="updateCompleteProductionState" parameterType="int">
+		update PRODUCTION_ORDER set state='제작완료' where production_order_idx=#{productionOrderIdx}
+	</update>
+	
+	<!-- 결제 완료 부분 -->
+	
+	<insert id="insertBalanceCash" parameterType="hashmap">
+		<selectKey keyProperty="cashIdx" resultType="int" order="BEFORE">
+		 	select cash_seq.nextval from dual
+		</selectKey>
+		insert into cash (cash_idx,content,update_cash,update_date,id) values(#{cashIdx},'제작 잔금 결제',#{cash},sysdate,#{id})
+	</insert>
+	<update id="updateCompletePaymentState" parameterType="int">
+		update PRODUCTION_ORDER set state='결제완료' where production_order_idx=#{productionOrderIdx}
+	</update>
+	
+	<update id="updateAddTotalCashForArtisan" parameterType="hashmap">
+		update member set cash=cash+#{totalPrice} where id=#{artisanId}
+	</update>
+	<insert id="insertTotalCashForArtisan" parameterType="hashmap">
+		<selectKey keyProperty="cashIdx" resultType="int" order="BEFORE">
+		 	select cash_seq.nextval from dual
+		</selectKey>
+		insert into cash (cash_idx,content,update_cash,update_date,id) values(#{cashIdx},#{content},#{totalPrice},sysdate,#{artisanId})
+	</insert>
+	
+	
+	<update id="updateDeliveryState" parameterType="hashmap">
+		update PRODUCTION_ORDER set state='배송',parcel_name=#{parcelName},parcel_idx=#{parcelIdx} where production_order_idx=#{productionOrderIdx}
+	</update>
+	
+	<update id="updateProductionOrder" parameterType="productionOrder">
+		update production_order set price=#{price}, quantity=#{quantity}, content=#{content}, address=#{address,jdbcType=VARCHAR} where production_order_idx=#{productionOrderIdx}
+	</update>
+	
+</mapper>
+
+
+
+

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="artisanOrderManagementMapper"> 
+	
+	
+	<!-- 주문리스트 + 페이징 -->
+	<select id="getTotalOrderCnt" parameterType="string" resultType="int">
+		<![CDATA[
+			select count(*) from order_product op, product p
+			where op.product_idx=p.product_idx and p.artisan_id=#{id}
+		]]>
+		
+	</select>
+	<select id="getOrderList" parameterType="hashmap" resultType="orderProduct">
+		<![CDATA[
+		select * from (select rownum rnum, list.* from
+	(select op.order_product_idx orderProductIdx, op.product_name productName, quantity, op.state state, 
+	parcel_name parcelName, parcel_idx parcelIdx, order_name orderName, order_tel orderTel, order_email orderEmail,
+	op.price price, address , orders_idx ordersIdx, op.product_idx productIdx, to_char(op.order_date,'yyyy-MM-dd') orderDate
+	from order_product op, product p where op.product_idx=p.product_idx and p.artisan_id=#{artisanId} 
+	order by ordersIdx desc) list  where rownum<=#{endArticleNum})  where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	
+	<!-- 주문옵션리스트 -->
+	<select id="getOrderOptionList" parameterType="int" resultType="orderOption">
+		<![CDATA[
+		select  distinct option_content optionContent ,opt.order_product_idx orderProductIdx, opt.cost cost, opt.option_quantity optionQuantity
+from order_product op, order_option opt, product p
+where op.product_idx=p.product_idx and opt.order_product_idx=#{orderProductIdx}
+		]]>
+	</select>
+	
+	<!-- 상태 업데이트 (제작) -->
+	<update id="updateProductionProcessing" parameterType="int">
+		update order_product set state='제작' where order_product_idx=#{idx}
+	</update>
+	<!-- 개별 배송상태 업데이트 -->
+	<update id="updateDeliveryProcessing" parameterType="int">
+		update order_product set state='배송' where order_product_idx=#{idx}
+	</update>
+	<!-- 일괄 배송상태 업데이트 -->
+	<update id="updateAllDeliveryProcessing" parameterType="int">
+		update order_product set state='배송' where state='제작' and orders_idx=#{ordersIdx}
+	</update>
+	
+	
+	<!-- 주문상태별 개수 (주문, 제작, 배송) -->
+	<select id="getOrderStateCnt" parameterType="string" resultType="int">
+		select count(*) from order_product where artisan_id=#{id} and state='주문'
+	</select>
+	<select id="getProductionStateCnt" parameterType="string" resultType="int">
+		select count(*) from order_product where artisan_id=#{id} and state='제작'	
+	</select>
+	<select id="getDeliveryStateCnt" parameterType="string" resultType="int">
+		select count(*) from order_product where artisan_id=#{id} and state='배송'	
+	</select>
+	
+	<!-- 기간별 리스트 -->
+	<select id="getTotalOrderCntByDate" parameterType="hashmap" resultType="int">
+		<![CDATA[
+			select count(*) from order_product where artisan_id=#{id} 
+			and to_char(ORDER_DATE,'yyyymmdd') >= to_char(sysdate-#{date},'yyyymmdd')
+		]]>
+	</select>
+	<select id="getOrderListByDate" parameterType="hashmap" resultType="orderProduct">
+		<![CDATA[
+			select * from (select rownum rnum, list.* from
+	(select op.order_product_idx orderProductIdx, op.product_name productName, quantity, op.state state, 
+	parcel_name parcelName, parcel_idx parcelIdx, order_name orderName, order_tel orderTel, order_email orderEmail,
+	op.price price, address , orders_idx ordersIdx, op.product_idx productIdx, to_char(op.order_date,'yyyy-MM-dd') orderDate
+	from order_product op, product p where op.product_idx=p.product_idx and p.artisan_id=#{artisanId} and to_char(op.ORDER_DATE,'yyyymmdd') >= to_char(sysdate-#{date},'yyyymmdd')
+	order by ordersIdx desc) list  where rownum<=#{endArticleNum})  where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	
+	<!-- 상태별 리스트 -->
+	<select id="getTotalOrderCntByState" parameterType="hashmap" resultType="int">
+		<![CDATA[
+			select count(*) from order_product where artisan_id=#{id} 
+			and state=#{state}
+		]]>
+	</select>
+	<select id="getOrderListByState" parameterType="hashmap" resultType="orderProduct">
+		<![CDATA[
+			select * from (select rownum rnum, list.* from
+	(select op.order_product_idx orderProductIdx, op.product_name productName, quantity, op.state state, 
+	parcel_name parcelName, parcel_idx parcelIdx, order_name orderName, order_tel orderTel, order_email orderEmail,
+	op.price price, address , orders_idx ordersIdx, op.product_idx productIdx, to_char(op.order_date,'yyyy-MM-dd') orderDate
+	from order_product op, product p where op.product_idx=p.product_idx and p.artisan_id=#{artisanId} and op.state=#{state}
+	order by ordersIdx desc) list  where rownum<=#{endArticleNum})  where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	
+	<select id="getOrderByList" parameterType="hashmap" resultType="orderProduct">
+		<![CDATA[
+			select * from (select rownum rnum, list.* from
+	(select op.order_product_idx orderProductIdx, op.product_name productName, quantity, op.state state, 
+	parcel_name parcelName, parcel_idx parcelIdx, order_name orderName, order_tel orderTel, order_email orderEmail,
+	op.price price, address , orders_idx ordersIdx, op.product_idx productIdx, to_char(op.order_date,'yyyy-MM-dd') orderDate
+	from order_product op, product p where op.product_idx=p.product_idx and p.artisan_id=#{artisanId} and op.state=#{state}
+	order by ${orderby} ${sort}) list  where rownum<=#{endArticleNum})  where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	<!-- 개별 배송추가 -->
+	<update id="insertOrderProductParcel" parameterType="orderProduct">
+		update order_product set parcel_name=#{parcelName}, parcel_idx=#{parcelIdx} where order_product_idx=#{orderProductIdx}
+	</update>
+	<!-- 일괄 배송추가 -->
+	<update id="insertAllOrderProductParcel" parameterType="orderProduct">
+		update order_product set parcel_name=#{parcelName}, parcel_idx=#{parcelIdx} where state='제작' and orders_idx=#{ordersIdx}
+	</update>
+	
+	<!-- 주문번호별 주문조회를 위한 부분들 -->
+	<select id="getOrder" parameterType="int" resultType="order">
+		select ORDERS_IDX ordersIDx, id, total_price totalPrice, address, to_char(order_date,'yyyy-MM-dd') orderDate, 
+	order_quantity orderQuantity from orders where orders_idx=#{ordersIdx}
+	</select>
+	<select id="getOrderListByOrdersIdx" parameterType="int" resultType="orderProduct">
+	select order_product_idx orderProductIdx, product_name productName, quantity, state state, 
+	parcel_name parcelName, parcel_idx parcelIdx, order_name orderName, order_tel orderTel, order_email orderEmail,
+	price price, address , orders_idx ordersIdx, product_idx productIdx, to_char(order_date,'yyyy-MM-dd') orderDate
+  from order_product where ORDERS_IDX=#{ordersIdx}
+	</select>
+	
+	
+</mapper>
+
+
+
+

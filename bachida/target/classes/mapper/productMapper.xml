@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="productMapper"> 
+
+	<!-- 00. 시퀀스 -->
+	<select id="getProductIdxSeq" resultType="int">
+		select
+		product_seq.nextval from dual
+	</select>
+
+	<!-- 01. 리스트Cnt -->
+	<select id="getProductCnt" resultType="int" parameterType="string">
+		select count(*) from product where artisan_id=#{artisanId}
+	</select>
+
+	<!-- 02. 리스트 & 페이징 -->
+	<select id="listArtisanProductSalse" parameterType="hashmap"
+		resultType="hashmap">
+		<![CDATA[
+		select * from
+			(select rownum rnum ,b.* from
+				(select p.product_idx productIdx, p.product_name productName, p.product_price productPrice, 
+    				p.product_info productInfo, p.recommend recommend,p.view_cnt viewCnt, to_char(p.write_date,'yyyy-MM-dd') writeDate,
+    				p.artisan_id artisanId,	min(pa.saved_file_name) savedFileName, min(pa.original_file_name) originalFileName, p.product_state productState
+    			from product p, PRODUCT_ATTACH pa
+    		where pa.PRODUCT_IDX=p.PRODUCT_IDX and artisan_id=#{artisanId} 
+    	group by p.product_idx,p.product_name,p.product_price,p.product_info,p.recommend,p.view_cnt,p.write_date,p.product_state,p.artisan_id order by p.product_idx desc)
+    	b where rownum<=#{endArticleNum}) where rnum >=#{startArticleNum}
+		]]>
+	</select>
+
+	<!-- 03. 작품등록 작품 -->
+	<insert id="insertProduct" parameterType="product">
+		insert into
+		product
+		values(#{productIdx},#{productName},#{productPrice},#{productInfo},0,0,sysdate,#{artisanId},#{metaCategoryIdx},
+		#{mainCategoryIdx},'판매중',#{artisanName})
+	</insert>
+
+	<!-- 04. 작품수정 (매진처리는 뷰에서 ) -->
+	<update id="updateProduct" parameterType="product">
+		update product set
+		product_name=#{productName},
+		product_price=#{productPrice},product_info=#{productInfo},meta_category_idx=#{metaCategoryIdx},main_category_idx=#{mainCategoryIdx},
+		product_state=#{productState} where product_idx=#{productIdx}
+	</update>
+
+	<!-- 05. 작품삭제 -->
+	<delete id="deleteProduct" parameterType="int">
+		delete from product	where product_idx =#{productIdx}
+	</delete>
+
+	<!-- 06. 저장된 작품 사진파일 삭제 -->
+	<delete id="deleteProductAttach" parameterType="int">
+		delete from	product_attach where product_idx =#{productIdx}
+	</delete>
+
+	<!-- 07. 원본파일 불러오기 -->
+	<select id="getOriginalFileName" parameterType="hashmap" resultType="string">
+		<![CDATA[
+			select original_file_name originalFileName from product_attach where product_idx=#{productIdx} and saved_file_name=#{savedFileName}
+		]]>
+	</select>
+
+	<!-- 08. 파일저장 -->
+	<insert id="insertProductAttach" parameterType="product">
+		insert into
+		product_attach values(#{productIdx}, #{savedFileName},
+		#{originalFileName})
+	</insert>
+
+	<!-- 10. 옵션 insert -->
+	<insert id="insertOption" parameterType="hashmap">
+		insert into
+		product_option values(#{productIdx},#{optionContent},#{cost})
+	</insert>
+
+	<!-- 10. 메인 카테고리 -->
+	<select id="getMainCategory" resultType="mainCategory">
+		select
+		main_category_Idx mainCategoryIdx, main_category_name mainCategoryName
+		from MAIN_CATEGORY
+	</select>
+
+	<!-- 11. 메타 카테고리 -->
+	<select id="getMetaCategory" resultType="metaCategory">
+		select meta_category_Idx
+		metaCategoryIdx, meta_category_Name metaCategoryName , main_category_idx mainCategoryIdx from
+		meta_category
+	</select>
+	<!-- 3. viewProduct -->
+	<select id="viewProduct" parameterType="int" resultType="product">
+		<![CDATA[
+		select product_idx productIdx, product_name productName, product_price productPrice, product_info 
+productInfo, to_char(write_date,'yyyy-MM-dd') writeDate, meta_category_idx metaCategoryIdx, main_category_idx mainCategoryIdx, product_state 
+productState from product where product_idx=#{productIdx}
+		]]>
+	</select>
+	<select id="increaseViewProductCnt" parameterType="int">
+		update product
+		set view_cnt = view_cnt+1 where product_Idx = #{productIdx}
+	</select>
+	
+	<delete id="deleteProductOption" parameterType="int">
+		delete from	product_option where product_idx =#{productIdx} 
+	</delete>
+	
+	
+</mapper>
+
+
+
+

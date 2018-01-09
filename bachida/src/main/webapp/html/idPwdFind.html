@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+<title>Insert title here</title>
+<link rel="stylesheet" href="../css/bootstrap.css">
+<script type="text/javascript" src="../js/bootstrap.js"></script>
+</head>
+<style>
+.h3col {
+	height : 50px;
+	background: #f5f5f5;
+	border-bottom: 1px solid black;
+	height: 50px;
+}
+.table{
+	margin-left: 30px;
+	width : 450px;
+}
+.table > tbody > tr > td{
+	border-top: 0px;
+}
+.row {
+	width: 600px;
+	margin-top: 20px;
+	border: 1px solid black;
+}
+h3 {
+	line-height: 0;
+}
+.btn{
+	margin-bottom: 20px;
+}
+</style>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12 h3col">
+				<h3>아이디 찾기</h3>
+			</div>
+			<div class="col-md-7">
+				<form id="idFind">
+					<table class="table">
+						<tr>
+							<td>이름 :</td>
+							<td><input type="text" name="name"></td>
+						</tr>
+						<tr>
+							<td>이메일 :</td>
+							<td><input type="text" name="email"></td>
+						</tr>
+					</table>
+					<button type="button" class="btn btn-default center-block" id="idFindBtn">아이디 찾기</button>
+				</form>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12 h3col">
+				<h3>비밀번호 찾기</h3>
+			</div>
+			<div class="col-md-7">
+				<form id="pwdFind">
+					<table class="table">
+						<tr>
+							<td>아이디 :</td>
+							<td><input type="text" name="id"></td>
+						</tr>
+						<tr>
+							<td>이메일 :</td>
+							<td>
+								<input type="text" name="email">
+								<button type="button" class="btn btn-default" id="PwdFindBtn">아이디 찾기</button>
+							</td>
+						</tr>
+						<tr id="emailKey">
+							
+						</tr>
+					</table>
+					
+					<button type="button" class="btn btn-default center-block" id="PwdFindBtn">아이디 찾기</button>
+				</form>
+			</div>
+		</div>
+	</div>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org/DTD config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!-- 꼭 정의할때 먼저 검색해보고 없으면 자신영역 만들어놓고 정의! 무엇에대한 정의인지 주석으로 써놓기 -->
+<configuration>
+	<typeAliases>
+		<!-- 회원 -->
+		<typeAlias alias="user" type="com.icia.bachida.vo.User"/>
+		<!-- 작가신청 -->
+		<typeAlias alias="artisanApply" type="com.icia.bachida.vo.ArtisanApply"/>
+		<!-- 신고 -->
+		<typeAlias alias="report" type="com.icia.bachida.vo.Report"/>
+		<!-- 메세지 -->
+		<typeAlias alias="message" type="com.icia.bachida.vo.Message"/>
+		<!-- 캐쉬 -->
+		<typeAlias alias="cash" type="com.icia.bachida.vo.Cash"/>
+		<!-- 주문 -->
+		<typeAlias alias="order" type="com.icia.bachida.vo.Order"/>
+		<!-- 주문상품+옵션 -->
+		<typeAlias alias="orderProductAndOption" type="com.icia.bachida.dto.OrderProductAndOption"/>
+		<!-- 주문상품 -->
+		<typeAlias alias="orderProduct" type="com.icia.bachida.vo.OrderProduct"/>
+		<!-- 상품평 -->
+		<typeAlias alias="comment" type="com.icia.bachida.vo.ProductComment"/>
+		<!-- 관심 -->
+		<typeAlias alias="interest" type="com.icia.bachida.vo.Interest"/>
+		<!-- 작가정보 -->
+		<typeAlias alias="artisan" type="com.icia.bachida.vo.Artisan"/>
+		<!-- 상품 -->
+		<typeAlias alias="product" type="com.icia.bachida.vo.Product"/>
+		<!-- 상품옵션 -->
+		<typeAlias alias="option" type="com.icia.bachida.vo.Option" />
+		<!-- 상품첨부 -->
+		<typeAlias alias="attach" type="com.icia.bachida.vo.ProductAttach"/>
+		<!-- 상품즐겨찾기 -->
+		<typeAlias alias="productChoose" type="com.icia.bachida.vo.ProductBookmark" />
+		<!-- 주문옵션 -->
+		<typeAlias alias="orderOption" type="com.icia.bachida.vo.OrderOption"/>
+		
+		<!-- 작가타임라인 -->
+		<typeAlias type="com.icia.bachida.vo.ArtisanTimeline" alias="artisanTimeline"/>
+		
+		<!-- 작가북마크 -->
+		<typeAlias type="com.icia.bachida.vo.ArtisanBookmark" alias="bookmark"/>
+		
+		<!-- 장바구니 옵션 -->
+		<typeAlias alias="cartOption" type="com.icia.bachida.vo.CartOption" />
+		<!-- 장바구니 상품 -->
+		<typeAlias alias="cartProduct" type="com.icia.bachida.vo.CartProduct" />
+		<!-- 장바구니 -->
+		<typeAlias alias="Cart" type="com.icia.bachida.vo.Cart" />
+		<!--  -->
+		<typeAlias alias="bid" type="com.icia.bachida.vo.Bid" />
+		<typeAlias alias="bidAttach" type="com.icia.bachida.vo.BidAttach" />
+		<typeAlias alias="custom" type="com.icia.bachida.vo.Custom" />
+		<typeAlias alias="customOpinion" type="com.icia.bachida.vo.CustomOpinion" />
+		<typeAlias alias="productionOrder" type="com.icia.bachida.vo.ProductionOrder" />
+		
+		<!-- 1:1커스텀 -->
+		<typeAlias alias="pcustom" type="com.icia.bachida.vo.Pcustom"/>
+		<!-- 1:1커스텀 의견조율 -->
+		<typeAlias alias="pcustomOpinion" type="com.icia.bachida.vo.PcustomOpinion"/>
+		
+		<!-- 메인카테고리 -->
+		<typeAlias alias="mainCategory" type="com.icia.bachida.vo.MainCategory"/>
+		<!-- 메타카테고리 -->
+		<typeAlias alias="metaCategory" type="com.icia.bachida.vo.MetaCategory"/>
+		
+	</typeAliases>
+</configuration>

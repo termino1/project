@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="artisanInfoMapper"> 
+	
+	<!-- 파일없이 업데이트 -->
+	<update id="artisanInfoUpdate" parameterType="artisan">
+		update artisan set artisan_name=#{artisanName}, artisan_intro=#{artisanIntro}, artisan_policy=#{artisanPolicy}, artisan_tel=#{artisanTel}, 
+		artisan_email=#{artisanEmail} where artisan_id=#{artisanId}
+	</update>
+	
+	<!-- 파일까지 업데이트 -->
+	<update id="artisanInfoUpdateWithFile" parameterType="artisan">
+		update artisan set artisan_name=#{artisanName}, artisan_intro=#{artisanIntro}, artisan_policy=#{artisanPolicy}, 
+artisan_tel=#{artisanTel}, artisan_email=#{artisanEmail}, original_file_name =#{originalFileName} , saved_file_name=#{savedFileName}
+where artisan_id=#{artisanId}
+	</update>
+	
+	<select id="nameCheck" parameterType="String" resultType="String">
+		select artisan_name from artisan where artisan_name=#{artisanName}
+	</select>
+</mapper>
+
+
+
+

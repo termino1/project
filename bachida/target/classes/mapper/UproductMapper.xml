@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="UproductMapper">
+	<!-- 메인 카테고리 -->
+	<select id="getMainCategory" resultType="mainCategory" parameterType="int">
+		select main_category_name mainCategoryName, main_category_idx mainCategoryIdx from MAIN_CATEGORY  where main_category_idx=#{mainCategoryIdx}
+	</select>
+	
+	<!-- 메타 카테고리 -->
+	<select id="getMetaCategory" resultType="metaCategory" parameterType="int">
+		select meta_category_name metaCategoryName , meta_category_idx metaCategoryIdx from meta_category where main_category_idx=#{mainCategoryIdx}
+	</select>
+	<!-- 선택된 메타 카테고리 -->
+	<select id="activeMetaCategory" resultType="metaCategory" parameterType="hashmap">
+		select meta_category_name metaCategoryName , meta_category_idx metaCategoryIdx from meta_category where main_category_idx=#{mainCategoryIdx} and meta_category_idx=#{metaCategoryIdx}
+	</select>
+	
+	
+	<!-- 메인카테고리별 상품 카운트 -->
+	<select id="getProductCnt" parameterType="hashmap" resultType="int">
+	select count(*) from product where product_state='판매중' and MAIN_CATEGORY_IDX=#{mainCategoryIdx} and META_CATEGORY_IDX=#{metaCategoryIdx}
+	</select>
+	<!-- 상품목록 -->	
+	<select id="productList" resultType="product" parameterType="hashmap">
+	<![CDATA[
+	select * from (select rownum rnum ,b.* from
+	(select meta_Category_Idx metaCategoryIdx, main_Category_Idx mainCategoryIdx ,PRODUCT_IDX productIdx, 
+	ARTISAN_Id artisanId,artisan_name artisanName,PRODUCT_NAME productName,PRODUCT_PRICE productPrice,recommend recommend,to_char(write_date,'yyMMdd') writeDate
+	  from PRODUCT where product_state='판매중' and MAIN_CATEGORY_IDX=#{mainCategoryIdx} and META_CATEGORY_IDX=#{metaCategoryIdx} order by writeDate desc ) b where rownum<=#{endArticleNum}) where rnum >=#{startArticleNum}
+	]]>
+	</select> 
+	<!-- 목록정렬 -->
+	<select id="productListOrderby" resultType="product" parameterType="hashmap">
+	<![CDATA[
+	select * from (select rownum rnum ,b.* from
+	(select meta_Category_Idx metaCategoryIdx, main_Category_Idx mainCategoryIdx ,PRODUCT_IDX productIdx, 
+	ARTISAN_Id artisanId,artisan_name artisanName,PRODUCT_NAME productName,PRODUCT_PRICE productPrice,recommend recommend,to_char(write_date,'yyMMdd') writeDate
+	 from PRODUCT where product_state='판매중' and MAIN_CATEGORY_IDX=#{mainCategoryIdx} and META_CATEGORY_IDX=#{metaCategoryIdx}  order by ${condition} ${sort}) b where rownum<=#{endArticleNum}) where rnum >=#{startArticleNum}
+	]]>
+	</select> 
+	<!-- 첨부파일 유무 -->
+	<select id="isProductAttach" resultType="int" parameterType="int">
+	select count(*) from product_attach where product_idx=#{productIdx}
+	</select>
+	<!-- 찜한상품목록체크 -->
+	<select id="activeBookmark" parameterType="string" resultType="int">
+	select product_idx productIdx from product_bookmark where id=#{id}
+	</select>
+	<!-- 찜한상품 한개 체크-->
+	<select id="activeBookmarkOne" parameterType="hashmap" resultType="int">
+	select count(*) from product_bookmark where id=#{id} and product_idx=#{productIdx}
+	</select>
+	<!-- 카테고리별 인기작품 -->
+	<select id="bestProduct" parameterType="int" resultType="product">
+	select meta_Category_Idx metaCategoryIdx,main_Category_Idx mainCategoryIdx ,PRODUCT_IDX productIdx, ARTISAN_Id artisanId,PRODUCT_NAME productName,PRODUCT_PRICE productPrice,recommend recommend from (select * from product order by recommend desc)  where rownum between 1 and 4 and  MAIN_CATEGORY_IDX=#{mainCategoryIdx} and META_CATEGORY_IDX=#{metaCategoryIdx}
+	</select>
+	<!-- 정렬  -->
+
+	<!--  상품상세  -->
+	<select id="getAttachs" parameterType="int" resultType="attach">
+	select a.original_file_name originalFileName, a.saved_file_name savedFileName from product_attach a, product p where p.PRODUCT_IDX = a.PRODUCT_IDX and p.PRODUCT_IDX=#{PRODUCT_IDX}
+	</select>
+	<!-- 상품한개 -->	
+	<select id="getProduct" resultType="product" parameterType="int">
+	select ARTISAN_Id artisanId,product_idx productIdx,product_name productName,product_price productPrice ,product_info productInfo, recommend from product where product_idx=#{productIdx} 
+	</select>
+	<!-- 작가정보 -->
+	<select id="getArtisan" resultType="artisan" parameterType="int">
+	select a.ARTISAN_ID artisanId, a.ARTISAN_NAME artisanName,a.ARTISAN_INTRO artisanIntro,a.ARTISAN_POLICY artisanPolicy,a.ORIGINAL_FILE_NAME originalFileName,a.saved_file_name savedFileName from ARTISAN a,product p where p.ARTISAN_ID = a.ARTISAN_ID and product_idx=#{productIdx} 
+	</select>
+	<!-- 상품평 -->
+	<select id="productComment" resultType="comment">
+	select c.PRODUCT_COMMENT_IDX productCommentIdx,c.product_idx productIdx, c.content content ,c.original_file_name originalFileName ,c.saved_file_name savedFileName,c.id id ,to_char(p.write_date,'yy-MM-dd')writeDate from PRODUCT_COMMENT c,product p where c.product_idx=p.product_idx and p.product_idx=#{productIdx}
+	</select>
+	<!-- 상품옵션 -->
+	<select id="getOption" parameterType="int" resultType="option">
+	select product_idx productIdx ,option_content optionContent,cost from product_option where product_idx=#{productIdx}
+	</select>
+	<!-- 상품더보기 -->	
+	<resultMap type="product" id="product_More">
+	<result property="productIdx" column="productIdx"/>
+	<result property="artisanId" column="artisanId" jdbcType="VARCHAR" />
+	<result property="productName" column="productName"/>
+	<collection property="attach" ofType="attach">
+	<result property="originalFileName" column="originalFileName" />
+	</collection>
+	</resultMap>
+	<select id="productMore" resultMap="product_More" parameterType="string">
+	select p.product_idx productIdx,p.artisan_id artisanId, p.PRODUCT_NAME productName,at.original_file_name originalFileName from PRODUCT p, product_attach at where rownum between 1 and 5 and p.PRODUCT_IDX=at.PRODUCT_IDX and p.ARTISAN_ID=#{artisanId} 
+	</select>
+	
+	<!-- 즐겨찾는상품목록 -->
+	<select id="chooseList" resultType="productChoose" parameterType="string">
+	select product_bookmark_idx productBookMarkIdx,id,product_idx productIdx from product_bookmark where id=#{id}
+	</select>
+	<resultMap type="product" id="chooseProduct">
+	<id property="productIdx" column="productIdx"/>
+	<result property="artisanId" column="artisanId"/>
+	<result property="productName" column="productName"/>
+	<result property="productPrice" column="productPrice"/>
+	<result property="recommend" column="recommend"/>
+	<collection property="attach" ofType="attach">
+	<result property="originalFileName" column="originalFileName"/>
+	</collection>
+	</resultMap>
+	<select id="chooseProductInfo"  resultMap="chooseProduct" parameterType="string">
+	select p.PRODUCT_IDX productIdx, p.ARTISAN_Id artisanId,p.PRODUCT_NAME productName,p.PRODUCT_PRICE productPrice,p.recommend recommend,at.original_file_name originalFileName from PRODUCT p, product_attach at ,product_bookmark b where p.product_idx=at.product_idx and p.product_idx = b.product_idx and b.id=#{id}
+	</select>
+	<!-- 즐겨찾는 상품 추가 -->
+	<insert id="insertChooseProduct" parameterType="productChoose" >
+	<selectKey keyProperty="productBookMarkIdx" resultType="int" order="BEFORE">
+			select product_bookmark_seq.nextval from dual
+		</selectKey>
+	insert into product_bookmark values(#{productBookMarkIdx},#{id},#{productIdx})
+	</insert>
+	<!-- 즐겨찾는상품 삭제 -->
+	<delete id="deleteChooseProduct" parameterType="hashmap">
+	DELETE from product_bookmark where product_idx=#{productIdx} and id=#{id}
+	</delete>
+	<!-- 즐겨찾는상품 카운트 증가-->
+	<update id="increaseProductChooseCnt" parameterType="int">
+	update PRODUCT set recommend=recommend+1 where product_idx=#{productIdx}
+	</update>
+	<!-- 즐겨찾는상품 카운트 감소-->
+	<update id="decreaseProductChooseCnt" parameterType="int">
+	update PRODUCT set recommend=recommend-1 where product_idx=#{productIdx}
+	</update>
+	<!-- 장바구니 -->
+	<!-- 장바구니상품유무 -->
+	<select id="cart" parameterType="string" resultType="Cart">
+	select cart_idx cartIdx, total_price totalPrice, id from cart where id=#{id} 
+	</select> 
+	
+	<!-- 옵션이 있는 장바구니상품 -->
+	<resultMap type="cartProduct" id="CartProduct">
+	<result property="cartProductIdx" column="cartProductIdx"/>
+	<result property="price" column="price"/>
+	<result property="quantity" column="quantity"/>
+	<result property="productIdx" column="productIdx"/>
+	<result property="cartIdx" column="cartIdx"/>
+	<collection property="cartOptions" ofType="cartOption">
+	<result property="optionContent" column="optionContent"/>
+	<result property="cost" column="cost"/>
+	<result property="optionQuantity" column="optionQuantity"/>
+	</collection>
+	</resultMap>
+	<select id="cart_Product" resultMap="CartProduct" parameterType="Integer">
+	select p.cart_product_idx cartProductIdx,p.price price,p.quantity quantity,p.product_idx productIdx,p.cart_idx cartIdx, o.option_content optionContent,o.cost cost,o.option_Quantity optionQuantity from cart_product p,cart_Option o where p.cart_product_idx=o.cart_product_idx and p.cart_product_idx=#{cartProductIdx}
+	</select>
+	
+	<resultMap type="cartProduct" id="CartProductList">
+	<result property="cartProductIdx" column="cartProductIdx"/>
+	<result property="price" column="price"/>
+	<result property="quantity" column="quantity"/>
+	<result property="productIdx" column="productIdx"/>
+	<result property="cartIdx" column="cartIdx"/>
+	<collection property="cartOptions" ofType="cartOption">
+	<result property="optionContent" column="optionContent"/>
+	<result property="cost" column="cost"/>
+	<result property="optionQuantity" column="optionQuantity"/>
+	</collection>
+	</resultMap>
+	<select id="cartProductList" resultMap="CartProductList" parameterType="Integer">
+	select p.cart_product_idx cartProductIdx,p.price price,p.quantity quantity,p.product_idx productIdx,p.cart_idx cartIdx, o.option_content optionContent,o.cost cost,o.option_Quantity optionQuantity from cart_product p,cart_Option o where p.cart_product_idx=o.cart_product_idx and p.cart_idx=#{cartIdx}
+	</select>
+	<!-- 옵션이 없는 -->
+	<select id="noOptionProduct" resultType="cartProduct" parameterType="Integer">
+	<![CDATA[select cart_product_idx cartProductIdx,price,quantity,product_idx productIdx,cart_idx cartIdx from cart_product  where cart_product_idx=#{cartProductIdx}
+	]]>
+	</select>
+	<!-- cart_product_idx  -->
+	<select id="cartProductIdxNo" resultType="cartProduct" parameterType="Integer">
+	select cart_product_idx cartProductIdx from cart_product where cart_idx=#{cartIdx}
+	</select>
+	<!-- 옵션유무 -->
+	<select id="isOption" parameterType="int" resultType="int">
+	<![CDATA[
+		select count(*) from cart_option where cart_product_idx=#{cartProductIdx}
+	]]>
+	</select>
+	
+	<!-- 장바구니 상품 -->	
+	<resultMap type="product" id="productList_cart">
+	<id property="productIdx" column="productIdx"/>
+	<result property="mainCategoryIdx" column="mainCategoryIdx"/>
+	<result property="metaCategoryIdx" column="metaCategoryIdx"/>
+	<result property="artisanId" column="artisanId"/>
+	<result property="productName" column="productName"/>
+	<result property="productPrice" column="productPrice"/>
+	<result property="recommend" column="recommend"/>
+	<collection property="attach" ofType="attach">
+	<result property="originalFileName" column="originalFileName"/>
+	</collection>
+	</resultMap>
+	<select id="productList_cart" resultMap="productList_cart" parameterType="Integer">
+	select p.meta_Category_Idx metaCategoryIdx, p.main_Category_Idx mainCategoryIdx ,p.PRODUCT_IDX productIdx, p.ARTISAN_Id artisanId,p.PRODUCT_NAME productName,p.PRODUCT_PRICE productPrice,p.recommend recommend,at.original_file_name originalFileName from PRODUCT p, product_attach at where p.product_idx=at.product_idx and p.product_Idx=#{productIdx}
+	</select> 
+	<!-- 장바구니삭제  -->
+	<!-- 옵션삭제  -->
+	<delete id="cartOptionDelete" parameterType="int">
+	delete from cart_option where cart_product_idx=#{cartProductIdx}
+	</delete>
+	<delete id="cartDelete" parameterType="string">
+	delete from cart where id=#{id}
+	</delete>
+	<delete id="cartProductDelete" parameterType="int">
+	delete from cart_product where cart_product_idx=#{cartProductIdx}
+	</delete>
+	<!-- 장바구니 담기 -->
+	<insert id="insertCart" parameterType="Cart">
+	insert into cart values(cart_seq.nextval,#{totalPrice},#{id})
+	</insert>
+	<insert id="insertCartProduct" parameterType="cartProduct">
+	<selectKey keyProperty="cartProductIdx" resultType="int" order="BEFORE">
+	select cart_product_idx_seq.nextval from dual
+	</selectKey>
+	insert into cart_product values(#{cartProductIdx},#{price},#{quantity},#{productIdx},#{cartIdx})
+	</insert>
+	<insert id="insertCartOption" parameterType="orderOption">
+	insert into cart_option values(#{cartProductIdx},#{optionContent},#{cost},#{optionQuantity})
+	</insert>
+	<!-- 주문하기 -->
+	<!-- 주문번호 생성 -->
+	<select id="getOrdersIdx" resultType="int">
+		select orders_seq.nextval from dual
+	</select>
+	<insert id="insertOrder" parameterType="order">
+		insert into orders values(#{ordersIdx}, #{id},#{totalPrice},#{address},sysdate,#{orderQuantity})
+	</insert>
+	
+	<select id="getOrderProductIdx" resultType="int">
+		select order_product_seq.nextval from dual
+	</select>
+	<insert id="insertProductOrderOne" parameterType="orderProduct" >
+	insert into order_product(order_Product_Idx,product_Name,quantity,state,parcel_Name,parcel_Idx,order_Name,order_Tel,order_Email,price,address,orders_Idx,product_Idx,order_Date,artisan_id) 
+	values(#{orderProductIdx},#{productName},#{quantity},'주문',null,0,#{orderName},#{orderTel},#{orderEmail},#{price},#{address},#{ordersIdx},#{productIdx},sysdate,#{artisanId})
+	</insert>
+	<!-- 주문자정보 -->
+	<select id="buyer" parameterType="string" resultType="user">
+	select name, email, tel,cash from member where id=#{id}
+	</select>
+	<!-- 주문옵션저장 -->
+	<insert id="insertProductOrderOption" parameterType="orderOption">
+	insert into order_option values(#{orderProductIdx},#{optionContent},#{cost},#{optionQuantity})
+	</insert>
+	
+	<!-- 구매자 캐쉬 차감 -->
+	<update id="updateCash" parameterType="hashmap">
+		<![CDATA[
+			update member set cash=cash-#{payment} where id=#{id}
+		]]>
+	</update>
+
+	<!-- 구매자 캐쉬 충전 -->
+	<update id="cashCharge" parameterType="hashmap">
+		<![CDATA[
+			update member set cash=cash+#{payment} where id=#{id}
+		]]>
+	</update>
+	
+	<!-- 구매자 캐쉬 충전 내역 삽입 -->
+	<insert id="insertCashCharge" parameterType="hashmap">
+		<![CDATA[
+			insert into cash (cash_idx, content, update_cash, update_date, id) values(cash_seq.nextval, '충전', #{payment}, sysdate, #{id})
+		]]>
+	</insert>
+	<!-- 구매자 캐쉬 내역 삽입 -->
+	<insert id="insertCash" parameterType="hashmap">
+		<![CDATA[
+			insert into cash (cash_idx, content, update_cash, update_date, id) values(cash_seq.nextval, '결제', #{payment}, sysdate, #{id})
+		]]>
+	</insert>
+	
+	<!-- 작가 캐쉬 입금 -->
+	<update id="updateArtisanCash" parameterType="hashmap">
+		<![CDATA[
+			update member set cash=cash+#{payment} where id=#{artisanId}
+		]]>
+	</update>
+	
+	<!-- 작가 캐쉬 내역 삽입 -->
+	<insert id="insertArtisanCash" parameterType="hashmap">
+		<![CDATA[
+			insert into cash (cash_idx, content, update_cash, update_date, id) values(cash_seq.nextval, '입금', #{payment}, sysdate, #{artisanId})					
+		]]>
+	</insert>
+	<select id="searchProduct" parameterType="string" resultType="product">
+	select product_idx from product where product_state='판매중' and product_name like CONCAT(#{search},'%') or product_info like CONCAT(#{search},'%') and artisan_id like CONCAT(#{search},'%')
+	</select>
+</mapper>
+
+
+
+
+

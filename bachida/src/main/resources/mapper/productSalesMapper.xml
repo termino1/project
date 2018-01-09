@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="productSalesMapper"> 
+
+	
+	<!-- 01. 리스트Cnt -->
+	<select id="getlistProductCnt"  resultType="int" parameterType="string">
+		select count(*) from product where artisan_id=#{artisanId}
+	</select>
+	
+	<!-- 02. 리스트 & 페이징 -->
+	<select id="getSalesProductList" parameterType="hashmap"  resultType="hashmap">
+		<![CDATA[
+		select * from
+			(select rownum rnum ,b.* from
+				(select p.product_idx productIdx, p.product_name productName, p.product_price productPrice, 
+    p.product_info productInfo, p.recommend recommend, to_char(p.write_date,'yyyy-MM-dd') writeDate,
+    p.artisan_id artisanId,	min(pa.saved_file_name) savedFileName, min(pa.original_file_name) originalFileName
+    from product p, PRODUCT_ATTACH pa
+    where pa.PRODUCT_IDX=p.PRODUCT_IDX and artisan_id=#{artisanId} group by p.product_idx,p.product_name,p.product_price,p.product_info,p.recommend,p.write_date,p.artisan_id order by p.product_idx desc )
+    b where rownum<=#{endArticleNum}) where rnum >=#{startArticleNum}
+		]]>
+	</select>
+	
+	<select id="getOriginalFileName" parameterType="hashmap" resultType="string">
+		<![CDATA[
+			select original_file_name originalFileName from product_attach where product_idx=#{productIdx} and saved_file_name=#{savedFileName}
+		]]>
+	</select>
+	
+	
+</mapper>
+
+
+
+

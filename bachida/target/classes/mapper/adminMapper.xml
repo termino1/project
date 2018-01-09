@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="adminMapper">
+	<!-- 전체회원보기  -->
+	<resultMap type="user" id="userMap">
+		<id property="id" column="id" />
+		<result property="name" column="name"/>
+		<result property="email" column="email"/>
+		<result property="tel" column="tel"/>
+		<result property="birthDate" column="birthDate"/>
+		<result property="joinDate" column="joinDate"/>
+		<result property="warningCnt" column="warningCnt"/>
+		<result property="cash" column="cash"/>
+		<result property="enable" column="enable"/>
+		<collection property="authorities" ofType="com.icia.bachida.vo.Authority">
+			<result property="authority" column="authority"/>
+		</collection>
+		<collection property="interests" ofType="interest">
+			<result property="mainCategoryIdx" column="mainCategoryIdx"/>
+		</collection>
+	</resultMap>
+	<select id="getAllUser" parameterType="hashmap" resultMap="userMap">
+		<![CDATA[
+			select * from (select rownum rnum , u.* from 
+			(select m.id id, name, tel, to_char(join_date,'yyyy-MM-dd') joinDate, enable, 
+			authority from member m, authorities a where m.id=a.id and m.id<>'admin' order by join_date desc) u
+			where rownum<=#{endArticleNum}) where rnum >=#{startArticleNum}
+		]]>
+	</select>
+	<select id="getUserCnt" resultType="int">
+		select count(*) from member
+	</select>
+	
+	<!-- 회원보기 -->
+	<select id="getUser" parameterType="string" resultMap="userMap">
+		<![CDATA[
+			select m.id id, cash,name,email,to_char(birth_date,'yyyy-MM-dd') birthDate, tel, to_char(join_date,'yyyy-MM-dd') joinDate, enable, authority,main_category_idx mainCategoryIdx   
+			from member m left outer join interest i on m.id=i.id , authorities a where m.id=a.id and m.id=#{id}
+		]]>
+	</select>
+	
+	<!-- 회원차단하기 -->
+	<update id="updateUserForBlock" parameterType="string">
+		update member set enable='0' where id=#{id}
+	</update>
+	
+	<!-- 차단해제하기 -->
+	<update id="updateUserForClearBlock" parameterType="string">
+		update member set enable='1' where id=#{id}
+	</update>
+	
+	<!-- 전체작가신청내역 -->
+	<select id="getApplyCnt" resultType="int">
+		select count(*) from artisan_apply
+	</select>
+	<select id="allApplyList" parameterType="hashmap" resultType="artisanApply">
+		<![CDATA[
+			select * from (select rownum rnum, a.* from (
+			select artisan_apply_idx artisanApplyIdx,SUBSTR(ARTISAN_intro,0,20) artisanIntro, 
+			state , to_char(apply_date,'yyyy-MM-dd') applyDate, id from artisan_apply order by artisan_apply_idx desc
+			) a where rownum<=#{endArticleNum}) where rnum>=#{startArticleNum} 
+		]]>
+	</select>
+	
+	<!-- 작가신청허가 -->
+	<update id="permitApply" parameterType="int">
+		update artisan_apply set state='허가' where artisan_apply_idx=#{artisanApplyIdx}
+	</update>
+	<insert id="insertAuthorityForManager" parameterType="string">
+		insert into authorities values(#{id},'ROLE_MANAGER')
+	</insert>
+	<insert id="insertArtisan" parameterType="string">
+		insert into ARTISAN values(#{id},' ',' ',' ',' ',' ',' ',' ')
+	</insert>
+	
+	<!-- 작가신청반려 -->
+	<update id="returnApply" parameterType="int">
+		update artisan_apply set state='반려' where artisan_apply_idx=#{artisanApplyIdx}
+	</update>
+	
+	<!-- 전체신고내역 -->
+	<select id="getReportCnt" resultType="int">
+		select count(*) from report
+	</select>
+	<select id="allReportList" parameterType="hashmap" resultType="report">
+		<![CDATA[
+			select * from (select rownum rnum, r.* from (
+			select report_idx reportIdx, report_id reportId, report_content reportContent,
+			report_state reportState, to_char(write_date,'yyyy-MM-dd') writeDate,
+			saved_file_name savedFileName, original_file_name originalFileName, id 
+			from report order by report_idx desc) r where rownum<=#{endArticleNum}) where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	
+	<!-- 신고글보기 -->
+	<select id="getReportByReportIdx" parameterType="int" resultType="report">
+		select report_idx reportIdx, report_id reportId, report_content reportContent,
+		report_state reportState, to_char(write_date,'yyyy-MM-dd') writeDate,
+		saved_file_name savedFileName, original_file_name originalFileName, id 
+		from report where report_idx=#{reportIdx}
+	</select>
+	
+	<!-- 신고글회원경고 -->
+	<update id="updateReportForWarning" parameterType="int">
+		update report set report_state='경고' where report_idx=#{reportIdx}
+	</update>
+	<insert id="insertRestrictForWarn" parameterType="hashmap">
+		insert into restriction values(restriction_seq.nextval,'경고',sysdate,#{reportId},#{reportIdx}) 
+	</insert>
+	<update id="updateUserForWarning" parameterType="string">
+		update member set warning_cnt=warning_cnt+1 where id=#{id}
+	</update>
+	<select id="getWarningCnt" parameterType="string" resultType="int">
+		select warning_cnt from member where id=#{reportId}
+	</select>
+	<update id="updateUserForWarningInit" parameterType="string">
+		update member set warning_cnt=0 where id=#{id}
+	</update>
+	
+	<!-- 신고글회원차단 -->
+	<update id="updateReportForBlock" parameterType="int">
+		update report set report_state='차단' where report_idx=#{reportIdx}
+	</update>
+	<insert id="insertRestrictForBlock" parameterType="hashmap">
+		insert into restriction values(restriction_seq.nextval,'차단',sysdate,#{reportId},#{reportIdx}) 
+	</insert>
+	
+	<!-- 차단회원보기 -->
+	<select id="getBlockUser" parameterType="hashmap" resultMap="userMap">
+		<![CDATA[
+			select * from (select rownum rnum , u.* from 
+			(select m.id id, name, tel, to_char(join_date,'yyyy-MM-dd') joinDate, enable, 
+			authority from member m, authorities a where m.id=a.id and m.id<>'admin' and enable='0' order by join_date desc) u
+			where rownum<=#{endArticleNum}) where rnum >=#{startArticleNum}
+		]]>
+	</select>
+	<select id="getBlockUserCnt" resultType="int">
+		select count(*) from member where enable='0'
+	</select>
+	
+	
+	
+	<!-- 주문내역 -->
+	<select id="getOrderProductCnt" resultType="int">
+		select count(*) from order_product
+	</select>
+	<select id="getAllOrderProduct" parameterType="hashmap" resultType="orderProduct">
+		<![CDATA[
+			select * from (select rownum rnum, o.* from (
+				select order_product_idx orderProductIdx, product_name productName, price, 
+				state, artisan_id artisanId, to_char(order_date,'yyyy-MM-dd') orderDate
+				from order_product order by order_product_idx desc
+			) o where rownum<=#{endArticleNum}) where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	<select id="sumOrderPrice" resultType="int">
+		select sum(price) from order_product
+	</select>
+	
+	<!-- 전체상품평내역 -->
+	<select id="getCommentCnt" resultType="int">
+		select count(*) from product_comment c, product p where c.product_idx=p.product_idx
+	</select>
+	<select id="getAllComment" parameterType="hashmap" resultType="hashmap">
+		<![CDATA[
+			select * from (select rownum rnum, cc.* from (
+				select c.product_comment_idx productCommentIdx, c.product_idx productIdx,
+				c.content content, c.saved_file_name savedFileName, c.original_file_name originalFileName,
+				c.id id, to_char(c.write_date,'yyyy-MM-dd') writeDate, p.product_name productName
+				from product_comment c, product p 
+				where c.product_idx=p.product_idx order by c.product_comment_idx desc
+			) cc where rownum<=#{endArticleNum}) where rnum>=#{startArticleNum}
+		]]>
+	</select>
+</mapper>

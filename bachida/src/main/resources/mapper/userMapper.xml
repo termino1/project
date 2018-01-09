@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="userMapper">
+	<!-- 회원가입 -->
+	<!-- 회원테이블에 회원정보삽입 -->
+	<insert id="insertUser" parameterType="user">
+		insert into member values(#{id}, #{name}, #{email}, #{tel}, #{password},
+		to_date(#{birthDate},'yyyy-MM-dd'), '1', sysdate, 0, 0)
+	</insert>
+	<!-- 권한테이블에 권한정보삽입 -->
+	<insert id="insertAuthority" parameterType="hashmap">
+		insert into authorities values(#{id}, #{authority})
+	</insert>
+	<!-- 관심테이블에 관심정보삽입 -->
+	<insert id="insertInterest" parameterType="hashmap">
+		insert into interest values(#{id}, #{mainCategoryIdx})
+	</insert>
+	
+	
+	<!-- 아이디 중복확인 -->
+	<select id="idCheck" parameterType="String" resultType="String">
+		select id from member where id=#{id}
+	</select>
+	
+	
+	<!-- 아이디찾기 -->
+	<select id="findId" parameterType="hashmap" resultType="String">
+		select id from member where name=#{name} and email=#{email}
+	</select>
+	
+	
+	<!-- 비밀번호찾기 -->
+	<!-- 회원정보찾기(id와 이메일로 유저가있는지 확인) -->
+	<select id="checkUser" parameterType="hashmap" resultType="String">
+		select id from member where id=#{id} and email=#{email}
+	</select>
+	<!-- 비밀번호변경 -->
+	<update id="changePassword" parameterType="hashmap">
+		update member set password=#{password} where id=#{id}
+	</update>
+	
+	
+	<!-- 수정할 회원정보 가져오기 -->
+	<resultMap type="user" id="userMap">
+		<id property="id" column="id" />
+		<result property="name" column="name"/>
+		<result property="email" column="email"/>
+		<result property="tel" column="tel"/>
+		<result property="birthDate" column="birthDate"/>
+		<result property="joinDate" column="joinDate"/>
+		<result property="warningCnt" column="warningCnt"/>
+		<result property="cash" column="cash"/>
+		<collection property="authorities" ofType="com.icia.bachida.vo.Authority">
+			<result property="authority" column="authority"/>
+		</collection>
+		<collection property="interests" ofType="interest">
+			<result property="mainCategoryIdx" column="mainCategoryIdx"/>
+		</collection>
+	</resultMap>
+	<select id="getUserForUpdate" parameterType="string" resultMap="userMap">
+		select m.id id, name, email, tel, to_char(birth_date, 'yyyy-MM-dd') 
+		birthDate, to_char(join_date,'yyyy-MM-dd') joinDate, warning_cnt warningCnt,
+		cash, authority, main_category_idx mainCategoryIdx 
+		from member m left outer join interest i on m.id=i.id , authorities a where m.id=a.id and m.id=#{id}
+	</select>
+	
+	
+	<!-- 회원정보 수정 -->
+	<!-- 수정페이지의 비밀번호검증를 위한 패스워드 추출 -->
+	<select id="getPassword" parameterType="String" resultType="String">
+		select password from member where id=#{id}
+	</select>
+	<!-- 회원테이블 변경 -->
+	<update id="updateUser" parameterType="user">
+		update member set email=#{email}, tel=#{tel}, password=#{password} where id=#{id}
+	</update>
+	
+	
+	<!-- 작가등록신청 -->
+	<!-- 새 글번호 받아오기 -->
+	<select id="getNewArtisanApplyIdx" resultType="int">
+		select artisan_apply_seq.nextval from dual
+	</select>
+	<!-- 작가신청테이블에 insert -->
+	<insert id="insertArtisanApply" parameterType="artisanApply">
+		insert into artisan_apply values(#{artisanApplyIdx},#{artisanTel},#{artisanEmail},#{artisanIntro},#{craftIntro},'접수',#{id},sysdate)
+	</insert>
+	<!-- 작자저장테이블에 insert -->
+	<insert id="insertApplyAttach" parameterType="hashmap">
+		insert into artisan_apply_attach values(#{artisanApplyIdx},#{savedFileName},#{originalFileName})
+	</insert>
+	
+	<!-- 내작가신청내역 -->
+	<select id="getApplyCntById" parameterType="string" resultType="int">
+		select count(*) from artisan_apply where id=#{id}
+	</select>
+	<select id="getApplyListById" parameterType="hashmap" resultType="artisanApply">
+		<![CDATA[
+			select * from (select rownum rnum, a.* from (
+			select artisan_apply_idx artisanApplyIdx,SUBSTR(ARTISAN_intro,0,20) artisanIntro, 
+			state , to_char(apply_date,'yyyy-MM-dd') applyDate from artisan_apply where id=#{id} order by artisan_apply_idx desc
+			) a where rownum<=#{endArticleNum}) where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	
+	
+	<!-- 작가신청보기 -->
+	<resultMap type="artisanApply" id="applyMap">
+		<id property="artisanApplyIdx" column="artisanApplyIdx" />
+		<result property="artisanTel" column="artisanTel"/>
+		<result property="artisanEmail" column="artisanEmail"/>
+		<result property="artisanIntro" column="artisanIntro"/>
+		<result property="craftIntro" column="craftIntro"/>
+		<result property="state" column="state"/>
+		<result property="id" column="id"/>
+		<result property="applyDate" column="applyDate"/>
+		<collection property="attach" ofType="com.icia.bachida.vo.ApplyAttach">
+			<result property="savedFileName" column="savedFileName"/>
+			<result property="originalFileName" column="originalFileName"/>
+		</collection>
+	</resultMap>
+	<select id="getApplyByIdx" resultMap="applyMap" parameterType="int">
+		select aa.artisan_apply_idx artisanApplyIdx, aa.artisan_tel artisanTel,
+		aa.artisan_email artisanEmail, aa.artisan_intro artisanIntro, aa.craft_intro craftIntro,
+		aa.state state, aa.id id, to_char(aa.apply_date,'yyyy-MM-dd') applyDate, aaa.saved_file_name savedFileName, aaa.original_file_name originalFileName
+		from artisan_apply aa, artisan_apply_attach aaa
+		where aa.artisan_apply_idx=aaa.artisan_apply_idx and aa.artisan_apply_idx=#{artisanApplyIdx}
+	</select>
+	
+	
+	<!-- 신고글작성 -->
+	<insert id="insertReport" parameterType="report">
+		insert into report values(report_seq.nextval, #{reportId}, #{reportContent},
+		'접수', sysdate, #{savedFileName}, #{originalFileName}, #{id})
+	</insert>
+	<!-- 내신고목록 -->
+	<select id="getReportCntById" parameterType="string" resultType="int">
+		select count(*) from report where id=#{id}
+	</select>
+	<select id="getMyReportList" parameterType="hashmap" resultType="report">
+		<![CDATA[
+			select * from (select rownum rnum, r.* from (
+			select report_idx reportIdx, report_id reportId, report_content reportContent,
+			report_state reportState, to_char(write_date,'yyyy-MM-dd') writeDate,
+			saved_file_name savedFileName, original_file_name originalFileName, id 
+			from report where id=#{id} order by report_idx desc) r where rownum<=#{endArticleNum}) where rnum>=#{startArticleNum}
+		]]>
+		
+	</select>
+	
+	
+	<!-- delete문은 exception처리를 하지 않는다? -->
+	<!-- 회원탈퇴 -->
+	<!-- 회원테이블의 정보 삭제 -->
+	<delete id="deleteUser" parameterType="String">
+		delete from member where id=#{id}
+	</delete>
+	<!-- 권한정보 삭제 -->
+	<delete id="deleteAuthority" parameterType="String">
+		delete from authorities where id=#{id}
+	</delete>
+	<!-- 관심정보 삭제 -->
+	<delete id="deleteInterest" parameterType="String">
+		delete from interest where id=#{id}
+	</delete>
+	<delete id="deleteProductBookmark" parameterType="String">
+		delete from product_bookmark where id=#{id}
+	</delete>
+	<delete id="deleteArtisanBookmark" parameterType="String">
+		delete from Artisan_Bookmark where id=#{id}
+	</delete>
+	<delete id="deleteCustom" parameterType="String">
+		delete from Custom where id=#{id}
+	</delete>
+	<delete id="deletePcustom" parameterType="String">
+		delete from Pcustom where id=#{id}
+	</delete>
+	<delete id="deleteQna" parameterType="String">
+		delete from Qna where id=#{id}
+	</delete>
+	<delete id="deleteRestriction" parameterType="String">
+		delete from Restriction where id=#{id}
+	</delete>
+	<delete id="deleteReport" parameterType="String">
+		delete from Report where id=#{id}
+	</delete>
+	<delete id="deleteCash" parameterType="String">
+		delete from Cash where id=#{id}
+	</delete>
+	
+	
+	
+	<!-- 메세지목록 -->
+	<!-- 페이징쿼리삽입필요 -->
+	<select id="getReceiveMsgCnt" parameterType="string" resultType="int">
+		select count(*) from message where receiver=#{id}
+	</select>
+	<select id="getSendMsgCnt" parameterType="string" resultType="int">
+		select count(*) from message where sender=#{id}
+	</select>
+	<select id="receiveMsgList" parameterType="hashmap" resultType="message">
+		<![CDATA[
+			select * from ( select rownum rnum, m.* from ( 
+			select message_idx messageIdx, sender, receiver, to_char(send_date,'yyyy-MM-dd') sendDate,
+			substr(message_content,0,15) messageContent, confirm from message where receiver=#{id} order by message_idx desc
+			 ) m where rownum<=#{endArticleNum} ) where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	<select id="sendMsgList" parameterType="hashmap" resultType="message">
+		<![CDATA[
+			select * from ( select rownum rnum, m.* from ( 
+			select message_idx messageIdx, sender, receiver, to_char(send_date,'yyyy-MM-dd') sendDate,
+			substr(message_content,0,15) messageContent, confirm from message where sender=#{id} order by message_idx desc
+			 ) m where rownum<=#{endArticleNum} ) where rnum>=#{startArticleNum}
+		]]>
+		
+	</select>
+	
+	
+	<!-- 메세지보기 -->
+	<!-- 메세지정보가져오기 -->
+	<select id="getMessage" parameterType="int" resultType="message">
+		select message_idx messageIdx, sender, receiver, to_char(send_date,'yyyy-MM-dd[HH24:mm]') sendDate,
+		message_content messageContent from message where message_idx=#{messageIdx}
+	</select>
+	<!-- 메세지확인정보업데이트 -->
+	<update id="updateMessage" parameterType="int">
+		update message set confirm='1' where message_idx=#{messageIdx}
+	</update>
+	
+	
+	<!-- 메세지보내기 -->
+	<insert id="insertMessage" parameterType="message">
+		insert into message values(message_seq.nextval, #{sender}, #{receiver}, sysdate,
+		#{messageContent}, '0')
+	</insert>
+	
+	
+	<!-- 캐쉬충전 -->
+	<!-- 회원정보에 캐쉬적립 -->
+	<update id="updateCash" parameterType="hashmap">
+		update member set cash=cash+#{cash} where id=#{id}
+	</update>
+	<!-- 캐쉬내역에 등록 -->
+	<insert id="insertCash" parameterType="hashmap">
+		insert into cash values(cash_seq.nextval, '충전', #{cash}, sysdate, #{id})
+	</insert>
+	
+	
+	<!-- 캐쉬내역목록 -->
+	<select id="getCashList" parameterType="String" resultType="cash">
+		select cash_idx cashIdx, content, update_cash updateCash, 
+		to_char(update_date, 'yyyy-MM-dd[hh24:mm:ss]') updateDate from cash where id=#{id} order by update_date desc
+	</select>
+	<!-- 잔여캐쉬보기 -->
+	<select id="getUserCash" parameterType="String" resultType="int">
+		select cash from member where id=#{id}
+	</select>
+	
+	
+	<!-- 주문내역리스트 -->
+	<select id="getOrderListById" parameterType="String" resultType="hashmap">
+		select o.orders_idx ordersIdx, o.order_quantity orderQuantity, o.total_price totalPrice, 
+		to_char(o.order_date,'yyyy-MM-dd') orderDate, max(p.product_name) productName, 
+		max(p.product_idx) productIdx, max(order_product_idx) orderProductIdx 
+		from orders o, order_product p 
+		where o.orders_idx=p.orders_idx and id=#{id} 
+		group by o.orders_idx, o.order_quantity, o.total_price, to_char(o.order_date,'yyyy-MM-dd')
+		order by o.orders_idx desc
+	</select>
+	
+	<!-- 주문상세 -->
+	<!-- 주문상품불러오기 -->
+	<resultMap type="orderProductAndOption" id="orderProductMap">
+		<id property="orderProductIdx" column="orderProductIdx" />
+		<result property="productName" column="productName"/>
+		<result property="quantity" column="quantity"/>
+		<result property="state" column="state"/>
+		<result property="parcelName" column="parcelName"/>
+		<result property="parcelIdx" column="parcelIdx"/>
+		<result property="orderName" column="orderName"/>
+		<result property="orderTel" column="orderTel"/>
+		<result property="orderEmail" column="orderEmail"/>
+		<result property="address" column="address"/>
+		<result property="price" column="price"/>
+		<result property="ordersIdx" column="ordersIdx"/>
+		<result property="productIdx" column="productIdx"/>
+		<result property="artisanId" column="artisanId"/>
+		<result property="commentCheck" column="commentCheck"/>
+		<collection property="orderOption" ofType="com.icia.bachida.vo.OrderOption">
+			<result property="optionContent" column="optionContent"/>
+			<result property="cost" column="cost"/>
+			<result property="optionQuantity" column="optionQuantity"/>
+		</collection>
+	</resultMap>
+	<select id="getOrderProduct" parameterType="int" resultMap="orderProductMap">
+		select p.order_product_idx orderProductIdx, p.product_name productName, p.quantity, p.state, 
+		p.parcel_name parcelName, p.parcel_idx parcelIdx, p.order_name orderName, p.order_tel orderTel, 
+		p.order_email orderEmail, p.price, p.address, p.product_idx productIdx,p.artisan_id artisanId, 
+		o.option_content optionContent, o.cost cost, o.OPTION_QUANTITY optionQuantity, p.comment_check commentCheck 
+		from order_product p left outer join order_option o on p.order_product_idx=o.order_product_idx
+		where p.orders_idx=#{ordersIdx}
+	</select>
+	<!-- 주문번호를 통해 주문불러오기 -->
+	<select id="getOrderByOrdersIdx" parameterType="int" resultType="order">
+		select orders_idx ordersIdx, id, total_price totalPrice, address, to_char(order_date,'yyyy-MM-dd') orderDate, 
+		order_quantity orderQuantity from orders where orders_idx=#{ordersIdx}
+	</select> 
+	
+	<!-- 상품정보가져오기 -->
+	<select id="getProductForCommnet" parameterType="int" resultType="product">
+		select product_idx productIdx, product_name productName, artisan_id artisanId from product where product_idx=#{productIdx}
+	</select>
+	<!-- 상품평쓰기 -->
+	<insert id="insertComment" parameterType="comment">
+		insert into product_comment values(product_comment_seq.nextval, #{productIdx}, #{content}, #{savedFileName}, #{originalFileName}, #{id}, sysdate)
+	</insert>
+	<!-- 상품평작성여부변경 -->
+	<update id="updateCommentCheck" parameterType="int">
+		update order_product set comment_check='1' where order_product_idx=#{orderProductIdx}
+	</update>
+	
+	
+	<!-- 주문 배송완료 처리하기 -->
+	<update id="updateOrderProductForDelivery" parameterType="int">
+		update order_product set state='배송완료' where order_product_idx=#{orderProductIdx}
+	</update>
+	
+	
+	<!-- 제작요청내역 -->
+	<select id="getCustomListById" parameterType="hashmap" resultType="custom">
+		<![CDATA[
+		select * from (select rownum rnum, c.* from 
+		(select custom_idx customIdx, title, content, to_char(write_date,'yyyy-MM-dd')writeDate, 
+		id, wish_price wishPrice, quantity, state, to_char(closing_date,'yyyy-MM-dd')closingDate,
+		original_file_name originalFileName, saved_file_name savedFileName, view_cnt viewCnt 
+		from custom where id=#{id} order by custom_idx desc)
+ 		c where rownum<=#{endArticleNum})
+ 		where rnum >=#{startArticleNum}
+		]]>
+	</select>
+	<!-- 제작요청내역수 -->
+	<select id="getCustomCntById" parameterType="string" resultType="int">
+		select count(*) from custom where id=#{id}
+	</select>
+	
+	
+	
+	<!-- 1:1제작요청내역 -->
+	<select id="getPcustomListById" parameterType="hashmap" resultType="pcustom">
+		<![CDATA[
+			select pp.pcustom_idx pcustomIdx, pp.title title, to_char(write_date, 'yyyy-MM-dd') writeDate, pp.state state,  pp.id id, pp.artisan_id artisanId 
+				from (select rownum rnum, p.* 
+					from (select pcustom_idx, title, write_date, state, id, artisan_id from pcustom where id=#{id} order by pcustom_idx desc) p
+						where rownum<=#{endArticleNum}) pp where rnum>=#{startArticleNum}
+		]]>
+	</select>
+	<!-- 1:1제작요청내역수 -->
+	<select id="getPcustomCntById" parameterType="string" resultType="int">
+		select count(*) from pcustom where id=#{id}
+	</select>
+	
+	
+	<!-- 상품파일네임 -->
+	<select id="getFileNameByProductidx" parameterType="int" resultType="hashmap">
+		select original_file_name originalFileName, saved_file_name savedFileName from product_attach where product_idx=#{productIdx} and rownum=1
+	</select>
+	
+	
+	<!-- 수정할 회원정보 가져오기 -->
+	<select id="getUserInfo" parameterType="string" resultMap="userMap">
+		select m.id id, name ,cash, authority, main_category_idx mainCategoryIdx 
+		from member m, authorities a, interest i where m.id=a.id and a.id=i.id and m.id=#{id}
+	</select>
+	<select id="getUserInfoWithoutInterest" parameterType="string" resultMap="userMap">
+		select m.id id, name ,cash, authority 
+		from member m, authorities a where m.id=a.id and m.id=#{id}
+	</select>
+	
+	<!-- 최근주문내역 -->
+	<select id="getrecentlyOrderById" parameterType="String" resultType="hashmap">
+		<![CDATA[
+			select * from (select o.orders_idx ordersIdx, o.order_quantity orderQuantity, o.total_price totalPrice, 
+			to_char(o.order_date,'yyyy-MM-dd') orderDate, max(p.product_name) productName, 
+			max(p.product_idx) productIdx, max(order_product_idx) orderProductIdx 
+			from orders o, order_product p 
+			where o.orders_idx=p.orders_idx and id=#{id}
+			group by o.orders_idx, o.order_quantity, o.total_price, to_char(o.order_date,'yyyy-MM-dd')
+			order by o.orders_idx desc) where rownum<=5
+		]]>
+	</select>
+	
+	
+	<!-- 주문제작 주문서 가져오기 -->
+	<select id="getBidIdx" parameterType="int" resultType="bid">
+		select bid_idx bidIdx, custom_idx customIdx, artisan_id artisanId from bid where custom_idx=#{customIdx} and state='낙찰'
+	</select>
+	<select id="getProductionOrder" parameterType="int" resultType="productionOrder">
+		select production_order_idx productionOrderIdx, state, order_division orderDivision, 
+		id, bid_idx bidIdx from PRODUCTION_ORDER where bid_idx=#{bidIdx}
+	</select>
+	
+</mapper>
+
+
+
+

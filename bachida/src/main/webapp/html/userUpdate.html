@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+<link rel="stylesheet" href="../css/bootstrap.css">
+<script type="text/javascript" src="../js/bootstrap.js"></script>
+<title>Insert title here</title>
+</head>
+<style>
+	button{
+		margin-left: 10px;
+	}
+</style>
+<body>
+	<div class="container">
+		<div class="row">
+			<form id="updateFrm">
+				<div class="col-md-7">
+					<h3>회원정보 변경</h3>
+					<table class="table">
+						<tr>
+							<td class="active">아이디:</td>
+							<td>
+								<input type="text" name="id" id="id" readonly="readonly">
+							</td>
+						</tr>
+						<tr>
+							<td class="active">이름:</td>
+							<td>
+								<input type="text" name="name" id="name" readonly="readonly">
+							</td>
+						</tr>
+						<tr>
+							<td class="active">이메일:</td>
+							<td><input type="text" name="email"></td>
+						</tr>
+						<tr>
+							<td class="active">휴대전화:</td>
+							<td><input type="text" name="tel"></td>
+						</tr>
+						<tr>
+							<td class="active">생년월일일:</td>
+							<td><input type="text" name="birthDate" id="birthDate" readonly="readonly"></td>
+						</tr>
+						<tr>
+							<td class="active">비밀번호:</td>
+							<td><input type="password" name="password"></td>
+						</tr>
+						<tr>
+							<td class="active">새로운 비밀번호:</td>
+							<td><input type="password" name="password2"></td>
+						</tr>
+						<tr>
+							<td class="active">비밀번호 확인:</td>
+							<td><input type="password" name="password2"></td>
+						</tr>
+						<tr>
+							<td class="active">관심 카테고리</td>
+							<td>
+								<input type="checkbox" name="interest" value=1>악세사리
+								<input type="checkbox" name="interest" value=2>패션소품
+								<input type="checkbox" name="interest" value=3>생활<br>
+								<input type="checkbox" name="interest" value=5>반려동물
+								<input type="checkbox" name="interest" value=4>디자인문구
+							</td>
+						</tr>
+					</table>
+						<button type="button" id="joinBtn" class="pull-right btn btn-danger">회원가입</button>
+						<button type="button" id="cancelBtn" class="pull-right btn btn-default">취소</button>
+				</div>
+			</form>
+
+		</div>
+	</div>
+</body>
+</html>
